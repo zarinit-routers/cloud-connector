@@ -12,10 +12,7 @@ import (
 )
 
 var (
-	conn           *amqp.Connection
-	requestsQueue  amqp.Queue
-	responsesQueue amqp.Queue
-	channel        *amqp.Channel
+	conn *amqp.Connection
 )
 
 func Serve() {
@@ -33,40 +30,33 @@ func Serve() {
 		globals.SetChannel(ch)
 	}
 
-	messages, err := channel.Consume(
-		requestsQueue.Name, // queue
-		"",                 // consumer
-		true,               // auto-ack
-		false,              // exclusive
-		false,              // no-local
-		false,              // no-wait
-		nil,                // args
-	)
+	messages, err := globals.GetRequestsFromQueue()
 	if err != nil {
 		log.Fatal("Failed to register a consumer", "error", err)
 	}
 
 	wg := sync.WaitGroup{}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		for m := range messages {
+	for m := range messages {
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
 			requestId := m.CorrelationId
 			log.Info("Received a message", "message", string(m.Body), "requestId", requestId) // TODO: remove this log
 			var cloudRequest models.FromCloudRequest
 			if err := json.Unmarshal(m.Body, &cloudRequest); err != nil {
 				log.Error("Failed to unmarshal message", "error", err)
 				sendError(m.CorrelationId, BadRequestBodyErr(err))
-				continue
+				return
 			}
 			if err := globals.SendRequest(cloudRequest.NodeID, cloudRequest.ToNode(requestId)); err != nil {
 				log.Error("Failed to send request", "error", err)
 				sendError(m.CorrelationId, err)
-				continue
+				return
 			}
-		}
-	}()
+		}()
+	}
 
 	wg.Wait()
 }

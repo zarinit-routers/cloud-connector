@@ -23,6 +23,19 @@ func SetChannel(ch *amqp.Channel) {
 
 	setupQueues()
 }
+
+func GetRequestsFromQueue() (<-chan amqp.Delivery, error) {
+	return channel.Consume(
+		requestsQueue.Name, // queue
+		"",                 // consumer
+		true,               // auto-ack
+		false,              // exclusive
+		false,              // no-local
+		false,              // no-wait
+		nil,                // args
+	)
+}
+
 func setupQueues() {
 
 	q, err := channel.QueueDeclare(
