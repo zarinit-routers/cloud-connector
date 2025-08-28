@@ -1,0 +1,42 @@
+
+services:
+  database:
+    restart: always
+    image: "postgres:latest"
+    ports:
+      - 5432:5432
+    env_file:
+      - env/postgres.env
+    networks:
+      - cloud-connector-network
+    volumes:
+      - /tmp/cloud-connector-db/:/var/lib/postgresql/data/
+
+  rabbit-mq:
+    image:  "rabbitmq:latest"
+    env_file:
+      - env/rabbitmq.env
+    ports:
+      - 5672:5672
+    networks:
+      - cloud-connector-network
+
+  server:
+    restart: always
+    depends_on:
+      - database
+      - rabbit-mq
+    build:
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:8080
+    networks:
+      - cloud-connector-network
+    develop:
+      watch:
+        - action: rebuild
+          path: .
+
+networks:
+  cloud-connector-network:
+    driver: bridge
