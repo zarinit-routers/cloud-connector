@@ -1,11 +1,14 @@
 package connections
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
+	"github.com/zarinit-routers/cloud-connector/globals"
+	"github.com/zarinit-routers/cloud-connector/models"
 )
 
 const (
@@ -21,8 +24,6 @@ var (
 	}
 )
 
-var connections = map[string]*websocket.Conn{}
-
 func Serve() {
 	srv := http.NewServeMux()
 	srv.HandleFunc("/api/ipc/connect", func(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +38,9 @@ func Serve() {
 			return
 		}
 
-		connections[auth.NodeID] = conn
+		globals.AppendConnection(auth.NodeID, conn)
+
+		go serveConnection(conn)
 
 		log.Info("Connection established", "nodeId", auth.NodeID, "groupId", auth.GroupID)
 	})
@@ -49,6 +52,29 @@ func Serve() {
 type AuthData struct {
 	NodeID  string
 	GroupID string
+}
+
+func serveConnection(conn *websocket.Conn) {
+	for {
+		messageType, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Error("Failed to read message", "error", err)
+			continue
+		}
+		log.Info("Received message", "messageType", messageType, "message", string(message))
+
+		var request models.FromNodeResponse
+		err = json.Unmarshal(message, &request)
+		if err != nil {
+			log.Error("Failed to unmarshal message", "error", err)
+			continue
+		}
+		if err := globals.SendResponse(request.RequestID, request.ToCloud()); err != nil {
+			log.Error("Failed to send response", "error", err)
+			continue
+		}
+
+	}
 }
 
 func checkAuth(r *http.Request) (*AuthData, error) {
