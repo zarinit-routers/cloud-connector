@@ -3,6 +3,7 @@ package queue
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/charmbracelet/log"
@@ -15,8 +16,21 @@ var (
 	conn *amqp.Connection
 )
 
+const (
+	ENV_RABBITMQ_URL = "RABBITMQ_URL"
+)
+
+func getRabbitMQUrl() string {
+	url := os.Getenv(ENV_RABBITMQ_URL)
+	if url == "" {
+		log.Fatal("RabbitMQ URL is not set", "envVariable", ENV_RABBITMQ_URL)
+	}
+
+	return url
+}
 func Serve() {
-	if connection, err := amqp.Dial("amqp://guest:guest@rabbit-mq:5672/"); err != nil {
+	url := getRabbitMQUrl()
+	if connection, err := amqp.Dial(url); err != nil {
 		log.Fatal("Failed to connect to RabbitMQ", "error", err)
 	} else {
 		conn = connection
