@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"net"
+	"os"
 
 	"github.com/charmbracelet/log"
 	pb "github.com/zarinit-routers/connector-rpc/gen/connector"
@@ -22,8 +23,15 @@ func Serve() error {
 	log.Info("Starting gRPC server", "address", getListenAddr())
 	return srv.Serve(listener)
 }
+
+const ENV_GRPC_ADDR = "CONNECTOR_GRPC_ADDR"
+
 func getListenAddr() string {
-	return "localhost:9080"
+	addr := os.Getenv(ENV_GRPC_ADDR)
+	if addr == "" {
+		log.Fatal("GRPC address not set", "envVariable", ENV_GRPC_ADDR)
+	}
+	return addr
 }
 
 type clientsService struct {
