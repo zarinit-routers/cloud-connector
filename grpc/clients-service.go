@@ -14,7 +14,7 @@ func newClientsService() *clientsService {
 	return &clientsService{}
 }
 
-func (s *clientsService) GetClients(ctx context.Context, req *pb.GetClientsRequest) (*pb.GetClientsResponse, error) {
+func (s *clientsService) GetClient(ctx context.Context, req *pb.GetClientsRequest) (*pb.GetClientsResponse, error) {
 	response := &pb.GetClientsResponse{}
 	response.Clients = append(response.Clients,
 		&pb.Client{
