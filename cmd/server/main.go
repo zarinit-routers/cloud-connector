@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/zarinit-routers/cloud-connector/connections"
+	"github.com/zarinit-routers/cloud-connector/grpc"
 	"github.com/zarinit-routers/cloud-connector/queue"
 )
 
@@ -20,6 +21,12 @@ func main() {
 	go func() {
 		defer wg.Done()
 		queue.Serve()
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		grpc.Serve()
 	}()
 
 	wg.Wait()
