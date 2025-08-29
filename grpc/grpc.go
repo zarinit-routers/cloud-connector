@@ -17,7 +17,7 @@ func Serve() error {
 
 	var opts []googleRPC.ServerOption
 	srv := googleRPC.NewServer(opts...)
-	pb.RegisterClientsServiceServer(srv, newClientsService())
+	pb.RegisterNodesServer(srv, newNodesService())
 
 	log.Info("Starting gRPC server", "address", getListenAddr())
 	return srv.Serve(listener)

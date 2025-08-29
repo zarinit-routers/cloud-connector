@@ -37,6 +37,12 @@ github.com/zarinit-routers/connector-rpc v0.0.2 h1:cSFJGgbf8/BDYO9/nKmhXIZNH+5Yv
 github.com/zarinit-routers/connector-rpc v0.0.2/go.mod h1:FnopZpxhvTn1ZCpPiAHjyZSxiJqJsedxDGgLUx70iZ4=
 github.com/zarinit-routers/connector-rpc v0.0.4 h1:1Br7poJpmBSYpddujgZ7jWBXDoAMgx88adgecZoiUvo=
 github.com/zarinit-routers/connector-rpc v0.0.4/go.mod h1:FnopZpxhvTn1ZCpPiAHjyZSxiJqJsedxDGgLUx70iZ4=
+github.com/zarinit-routers/connector-rpc v0.0.5 h1:mm2XzlZr0a77lJJb+Qe2d0mOeMH5oFnQ2dFw3cplFP4=
+github.com/zarinit-routers/connector-rpc v0.0.5/go.mod h1:FnopZpxhvTn1ZCpPiAHjyZSxiJqJsedxDGgLUx70iZ4=
+github.com/zarinit-routers/connector-rpc v0.0.6 h1:BlAhli5hrNoR8d3ZtfkTVf+GsTuwLpEXsewqn4SRbP8=
+github.com/zarinit-routers/connector-rpc v0.0.6/go.mod h1:FnopZpxhvTn1ZCpPiAHjyZSxiJqJsedxDGgLUx70iZ4=
+github.com/zarinit-routers/connector-rpc v0.0.7 h1:+Yazkwt1eH9dYaEa/+VUUdx+uBcoreSgI1VdWYQUkd8=
+github.com/zarinit-routers/connector-rpc v0.0.7/go.mod h1:FnopZpxhvTn1ZCpPiAHjyZSxiJqJsedxDGgLUx70iZ4=
 golang.org/x/exp v0.0.0-20231006140011-7918f672742d h1:jtJma62tbqLibJ5sFQz8bKtEM8rJBtfilJ2qTU199MI=
 golang.org/x/exp v0.0.0-20231006140011-7918f672742d/go.mod h1:ldy0pHrwJyGW56pPQzzkH36rKxoZW1tw7ZJpeKx+hdo=
 golang.org/x/net v0.41.0 h1:vBTly1HeNPEn3wtREYfy4GZ/NECgw2Cnl+nK6Nz3uvw=
