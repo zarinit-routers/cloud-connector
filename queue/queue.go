@@ -8,12 +8,14 @@ import (
 
 	"github.com/charmbracelet/log"
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/zarinit-routers/cloud-connector/globals"
 	"github.com/zarinit-routers/cloud-connector/models"
 )
 
 var (
-	conn *amqp.Connection
+	conn      *amqp.Connection
+	channel   *amqp.Channel
+	requests  amqp.Queue
+	responses amqp.Queue
 )
 
 const (
@@ -28,6 +30,17 @@ func getRabbitMQUrl() string {
 
 	return url
 }
+
+type MessageHandlerFunc func(*amqp.Delivery) error
+
+var (
+	messageHandlers = []MessageHandlerFunc{}
+)
+
+func AddHandler(h MessageHandlerFunc) {
+	messageHandlers = append(messageHandlers, h)
+}
+
 func Serve() {
 	url := getRabbitMQUrl()
 	if connection, err := amqp.Dial(url); err != nil {
@@ -41,38 +54,51 @@ func Serve() {
 	if ch, err := conn.Channel(); err != nil {
 		log.Fatal("Failed to open a channel", "error", err)
 	} else {
-		globals.SetChannel(ch)
+		channel = ch
 	}
 
-	messages, err := globals.GetRequestsFromQueue()
+	if req, res, err := setupQueues(channel); err != nil {
+		log.Fatal("Failed to setup queues", "error", err)
+	} else {
+		requests = req
+		responses = res
+	}
+
+	messages, err := channel.Consume(
+		requests.Name, // queue
+		"",            // consumer
+		true,          // auto-ack
+		false,         // exclusive
+		false,         // no-local
+		false,         // no-wait
+		nil,           // args
+	)
+
 	if err != nil {
 		log.Fatal("Failed to register a consumer", "error", err)
 	}
 
+	for m := range messages {
+		go handleMessage(&m)
+	}
+}
+
+func handleMessage(msg *amqp.Delivery) error {
+
 	wg := sync.WaitGroup{}
 
-	for m := range messages {
-
+	for _, handler := range messageHandlers {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			requestId := m.CorrelationId
-			log.Info("Received a message", "message", string(m.Body), "requestId", requestId) // TODO: remove this log
-			var cloudRequest models.FromCloudRequest
-			if err := json.Unmarshal(m.Body, &cloudRequest); err != nil {
-				log.Error("Failed to unmarshal message", "error", err)
-				sendError(m.CorrelationId, BadRequestBodyErr(err))
-				return
-			}
-			if err := globals.SendRequest(cloudRequest.NodeID, cloudRequest.ToNode(requestId)); err != nil {
-				log.Error("Failed to send request", "error", err)
-				sendError(m.CorrelationId, err)
-				return
+			if err := handler(msg); err != nil {
+				log.Error("Error while handling message, sending internal error back", "correlationId", msg.CorrelationId, "error", err)
+				sendError(msg.CorrelationId, err)
 			}
 		}()
 	}
 
-	wg.Wait()
+	return nil
 }
 
 func BadRequestBodyErr(err error) error {
@@ -85,5 +111,54 @@ func sendError(requestId string, err error) error {
 		RequestError: err.Error(),
 	}
 
-	return globals.SendResponse(requestId, response)
+	return SendResponse(requestId, response)
+}
+
+func setupQueues(channel *amqp.Channel) (requests amqp.Queue, responses amqp.Queue, err error) {
+
+	requests, err = channel.QueueDeclare(
+		"requests", // name
+		false,      // durable
+		false,      // delete when unused
+		false,      // exclusive
+		false,      // no-wait
+		nil,        // arguments
+	)
+	if err != nil {
+		log.Fatal("Failed to declare a queue", "error", err)
+		return requests, responses, err
+	}
+
+	responses, err = channel.QueueDeclare(
+		"responses", // name
+		false,       // durable
+		false,       // delete when unused
+		false,       // exclusive
+		false,       // no-wait
+		nil,         // arguments
+	)
+	if err != nil {
+		log.Fatal("Failed to declare a queue", "error", err)
+		return requests, responses, err
+	}
+
+	return requests, responses, nil
+}
+
+func SendResponse(requestId string, response *models.ToCloudResponse) error {
+	body, err := json.Marshal(response)
+	if err != nil {
+		return err
+	}
+	return channel.Publish(
+		"",             // exchange
+		responses.Name, // routing key
+		false,          // mandatory
+		false,          // immediate
+		amqp.Publishing{
+			ContentType:   "application/json",
+			CorrelationId: requestId,
+			Body:          body,
+		},
+	)
 }

@@ -3,11 +3,11 @@ package connections
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
-	"github.com/zarinit-routers/cloud-connector/globals"
 	"github.com/zarinit-routers/cloud-connector/models"
 )
 
@@ -22,7 +22,26 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
+	connections = map[string]*websocket.Conn{}
 )
+
+func AppendConnection(nodeId string, conn *websocket.Conn) {
+	if connections[nodeId] != nil {
+		log.Warn("Connection with that node already exists, closing it", "nodeId", nodeId)
+		closeConn(connections[nodeId])
+	}
+	connections[nodeId] = conn
+}
+
+func closeConn(conn *websocket.Conn) {
+	addr := fmt.Sprintf("%s %s", conn.RemoteAddr().Network(), conn.RemoteAddr().String())
+
+	if err := conn.Close(); err != nil {
+		log.Error("Failed close connection, process will be forced", "address", addr, "error", err)
+	}
+
+	log.Warn("Connection closed", "address", addr)
+}
 
 func Serve() {
 	srv := http.NewServeMux()
@@ -38,7 +57,7 @@ func Serve() {
 			return
 		}
 
-		globals.AppendConnection(auth.NodeID, conn)
+		AppendConnection(auth.NodeID, conn)
 
 		go serveConnection(conn)
 
@@ -53,6 +72,13 @@ type AuthData struct {
 	NodeID  string
 	GroupID string
 }
+type MessageHandlerFunc func(message []byte) error
+
+var handlers = []MessageHandlerFunc{}
+
+func AddHandler(handler MessageHandlerFunc) {
+	handlers = append(handlers, handler)
+}
 
 func serveConnection(conn *websocket.Conn) {
 	for {
@@ -61,17 +87,18 @@ func serveConnection(conn *websocket.Conn) {
 			log.Error("Failed to read message", "error", err)
 			continue
 		}
-		log.Info("Received message", "messageType", messageType, "message", string(message))
 
-		var request models.FromNodeResponse
-		err = json.Unmarshal(message, &request)
-		if err != nil {
-			log.Error("Failed to unmarshal message", "error", err)
-			continue
+		if messageType == websocket.CloseMessage {
+			closeConn(conn)
+			return
 		}
-		if err := globals.SendResponse(request.RequestID, request.ToCloud()); err != nil {
-			log.Error("Failed to send response", "error", err)
-			continue
+
+		for _, handler := range handlers {
+			go func() {
+				if err := handler(message); err != nil {
+					log.Error("Failed to handle message", "error", err)
+				}
+			}()
 		}
 
 	}
@@ -107,4 +134,18 @@ func authenticateInGroup(groupId string, passphrase string) error {
 
 func getAddress() string {
 	return ":8080"
+}
+
+func SendRequest(nodeId string, r *models.ToNodeRequest) error {
+	conn, ok := connections[nodeId]
+	if !ok {
+		return fmt.Errorf("node with id %q not connected", nodeId)
+	}
+
+	message, err := json.Marshal(r)
+	if err != nil {
+		return err
+	}
+
+	return conn.WriteMessage(websocket.TextMessage, message)
 }
