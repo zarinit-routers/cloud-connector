@@ -1,16 +1,23 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/charmbracelet/log"
+	pgx "github.com/jackc/pgx/v5"
+	"github.com/zarinit-routers/cloud-connector/storage/repository"
 )
 
 const (
 	ENV_CONNECTION_STRING = "DATABASE_CONNECTION_STRING"
 	ENV_AUTO_MIGRATE      = "DATABASE_AUTO_MIGRATE"
+)
+
+var (
+	connection *pgx.Conn
 )
 
 func getConnectionString() (string, error) {
@@ -30,20 +37,23 @@ func shouldMigrate() bool {
 	return false
 }
 
-func migrate() error {
-	log.Info("Migrating database")
-	return fmt.Errorf("migrations not implemented")
-}
-
 func Setup() error {
-	conn, err := getConnectionString()
+	connectionString, err := getConnectionString()
 	if err != nil {
 		return fmt.Errorf("bad connection string: %s", err)
 	}
-	log.Info("Connecting to database", "connectionString", conn)
+	log.Info("Connecting to database", "connectionString", connectionString)
+
+	if conn, err := pgx.Connect(context.Background(), connectionString); err != nil {
+		return err
+	} else {
+		connection = conn
+	}
+
+	repository.Setup(connection)
 
 	if shouldMigrate() {
-		if err := migrate(); err != nil {
+		if err := migrateDb(); err != nil {
 			return fmt.Errorf("migrations failed: %s", err)
 		}
 	}
