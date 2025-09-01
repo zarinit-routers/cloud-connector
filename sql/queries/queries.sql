@@ -1,4 +1,4 @@
--- name: NodeExists :one
+-- name: GetNode :one
 SELECT
     *
 FROM
@@ -37,3 +37,15 @@ SET
     group_id = @group_id
 WHERE
     n.id = @id;
+
+-- name: AddTag :exec
+
+INSERT INTO tags (node_id, title) VALUES (@node_id,@title);
+
+-- name: RemoveTag :exec
+
+DELETE FROM tags t WHERE t.node_id = @node_id AND t.title = @title;
+
+-- name: GetTags :many
+
+SELECT t.title FROM tags t WHERE t.node_id = @node_id;

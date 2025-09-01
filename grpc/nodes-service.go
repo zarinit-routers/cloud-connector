@@ -3,6 +3,8 @@ package grpc
 import (
 	"context"
 
+	"github.com/zarinit-routers/cloud-connector/models"
+	"github.com/zarinit-routers/cloud-connector/storage/repository"
 	pb "github.com/zarinit-routers/connector-rpc/gen/connector"
 )
 
@@ -15,34 +17,85 @@ func newNodesService() *nodesService {
 }
 
 func (s *nodesService) NodesByGroup(ctx context.Context, req *pb.NodesByGroupRequest) (*pb.NodesResponse, error) {
-	response := &pb.NodesResponse{}
-	response.Clients = append(response.Clients,
-		&pb.Node{
-			Id:   "1",
-			Name: "Dummy Client 1",
-			Tags: []string{"dummy", "cool", "first"},
+	groupId, err := models.UUIDFromString(req.GroupId)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := repository.GetQueries().GetNodes(ctx, groupId)
+	if err != nil {
+		return nil, err
+	}
+	nodes := []*pb.Node{}
+	for _, d := range data {
+
+		tags, err := repository.GetQueries().GetTags(ctx, d.Id)
+		if err != nil {
+			return nil, err
+		}
+		nodes = append(nodes, &pb.Node{
+			Id:   d.Id.String(),
+			Name: d.Title.String,
+			Tags: tags,
 		})
-	response.Clients = append(response.Clients,
-		&pb.Node{
-			Id:   "2",
-			Name: "Dummy Client 2",
-			Tags: []string{"dummy", "metal", "pop"},
-		})
-	return response, nil
+	}
+	return &pb.NodesResponse{
+		Clients: nodes,
+	}, nil
 }
 
 func (s *nodesService) AddTag(ctx context.Context, req *pb.TagRequest) (*pb.Node, error) {
+	id, err := models.UUIDFromString(req.ModeId)
+	if err != nil {
+		return nil, err
+	}
+	err = repository.GetQueries().AddTag(ctx, repository.AddTagParams{
+		Title:  req.Tag,
+		NodeId: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	node, err := repository.GetQueries().GetNode(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	tags, err := repository.GetQueries().GetTags(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	return &pb.Node{
 		Id:   req.ModeId,
-		Name: "Dummy Client " + req.ModeId,
-		Tags: []string{req.Tag},
+		Name: node.Title.String,
+		Tags: tags,
 	}, nil
 }
 
 func (s *nodesService) RemoveTag(ctx context.Context, req *pb.TagRequest) (*pb.Node, error) {
+	id, err := models.UUIDFromString(req.ModeId)
+	if err != nil {
+		return nil, err
+	}
+	err = repository.GetQueries().RemoveTag(ctx, repository.RemoveTagParams{
+		Title:  req.Tag,
+		NodeId: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	node, err := repository.GetQueries().GetNode(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	tags, err := repository.GetQueries().GetTags(ctx, id)
+	if err != nil {
+		return nil, err
+	}
 	return &pb.Node{
 		Id:   req.ModeId,
-		Name: "Dummy Client " + req.ModeId,
-		Tags: []string{},
+		Name: node.Title.String,
+		Tags: tags,
 	}, nil
 }

@@ -11,6 +11,45 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addTag = `-- name: AddTag :exec
+
+INSERT INTO tags (node_id, title) VALUES ($1,$2)
+`
+
+type AddTagParams struct {
+	NodeId pgtype.UUID
+	Title  string
+}
+
+func (q *Queries) AddTag(ctx context.Context, arg AddTagParams) error {
+	_, err := q.db.Exec(ctx, addTag, arg.NodeId, arg.Title)
+	return err
+}
+
+const getNode = `-- name: GetNode :one
+SELECT
+    id, group_id, title, first_connection, last_connection
+FROM
+    nodes n
+WHERE
+    n.id = $1
+LIMIT
+    1
+`
+
+func (q *Queries) GetNode(ctx context.Context, id pgtype.UUID) (Node, error) {
+	row := q.db.QueryRow(ctx, getNode, id)
+	var i Node
+	err := row.Scan(
+		&i.Id,
+		&i.GroupId,
+		&i.Title,
+		&i.FirstConnection,
+		&i.LastConnection,
+	)
+	return i, err
+}
+
 const getNodes = `-- name: GetNodes :many
 SELECT
     id, group_id, title, first_connection, last_connection
@@ -46,6 +85,31 @@ func (q *Queries) GetNodes(ctx context.Context, groupID pgtype.UUID) ([]Node, er
 	return items, nil
 }
 
+const getTags = `-- name: GetTags :many
+
+SELECT t.title FROM tags t WHERE t.node_id = $1
+`
+
+func (q *Queries) GetTags(ctx context.Context, nodeID pgtype.UUID) ([]string, error) {
+	rows, err := q.db.Query(ctx, getTags, nodeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var title string
+		if err := rows.Scan(&title); err != nil {
+			return nil, err
+		}
+		items = append(items, title)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const newNode = `-- name: NewNode :exec
 INSERT INTO nodes (id, group_id, first_connection, last_connection) 
 VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -59,30 +123,6 @@ type NewNodeParams struct {
 func (q *Queries) NewNode(ctx context.Context, arg NewNodeParams) error {
 	_, err := q.db.Exec(ctx, newNode, arg.Id, arg.GroupId)
 	return err
-}
-
-const nodeExists = `-- name: NodeExists :one
-SELECT
-    id, group_id, title, first_connection, last_connection
-FROM
-    nodes n
-WHERE
-    n.id = $1
-LIMIT
-    1
-`
-
-func (q *Queries) NodeExists(ctx context.Context, id pgtype.UUID) (Node, error) {
-	row := q.db.QueryRow(ctx, nodeExists, id)
-	var i Node
-	err := row.Scan(
-		&i.Id,
-		&i.GroupId,
-		&i.Title,
-		&i.FirstConnection,
-		&i.LastConnection,
-	)
-	return i, err
 }
 
 const reconnectNode = `-- name: ReconnectNode :exec
@@ -102,6 +142,21 @@ type ReconnectNodeParams struct {
 
 func (q *Queries) ReconnectNode(ctx context.Context, arg ReconnectNodeParams) error {
 	_, err := q.db.Exec(ctx, reconnectNode, arg.GroupId, arg.Id)
+	return err
+}
+
+const removeTag = `-- name: RemoveTag :exec
+
+DELETE FROM tags t WHERE t.node_id = $1 AND t.title = $2
+`
+
+type RemoveTagParams struct {
+	NodeId pgtype.UUID
+	Title  string
+}
+
+func (q *Queries) RemoveTag(ctx context.Context, arg RemoveTagParams) error {
+	_, err := q.db.Exec(ctx, removeTag, arg.NodeId, arg.Title)
 	return err
 }
 

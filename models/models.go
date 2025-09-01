@@ -1,6 +1,30 @@
 package models
 
+import (
+	"fmt"
+
+	"github.com/charmbracelet/log"
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
 type JsonMap = map[string]any
+
+type UUID = pgtype.UUID
+
+func UUIDFromString(str string) (UUID, error) {
+
+	bytes := []byte(str)
+	if len(bytes) != 16 {
+		log.Warn("Bad UUID string", "string", str, "bytesLength", len(bytes))
+		return pgtype.UUID{
+			Valid: false,
+		}, fmt.Errorf("bad UUID string, bytes length is %d, must be %d", len(bytes), 16)
+	}
+	return pgtype.UUID{
+		Bytes: [16]byte(bytes),
+		Valid: true,
+	}, nil
+}
 
 type FromCloudRequest struct {
 	NodeID  string  `json:"nodeId"`
