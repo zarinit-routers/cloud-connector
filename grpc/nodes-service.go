@@ -35,7 +35,7 @@ func (s *nodesService) NodesByGroup(ctx context.Context, req *pb.NodesByGroupReq
 		}
 		nodes = append(nodes, &pb.Node{
 			Id:   d.Id.String(),
-			Name: d.Title.String,
+			Name: d.Name.String,
 			Tags: tags,
 		})
 	}
@@ -50,7 +50,7 @@ func (s *nodesService) AddTag(ctx context.Context, req *pb.TagRequest) (*pb.Node
 		return nil, err
 	}
 	err = repository.GetQueries().AddTag(ctx, repository.AddTagParams{
-		Title:  req.Tag,
+		Tag:    req.Tag,
 		NodeId: id,
 	})
 	if err != nil {
@@ -67,7 +67,7 @@ func (s *nodesService) AddTag(ctx context.Context, req *pb.TagRequest) (*pb.Node
 	}
 	return &pb.Node{
 		Id:   req.ModeId,
-		Name: node.Title.String,
+		Name: node.Name.String,
 		Tags: tags,
 	}, nil
 }
@@ -78,7 +78,7 @@ func (s *nodesService) RemoveTag(ctx context.Context, req *pb.TagRequest) (*pb.N
 		return nil, err
 	}
 	err = repository.GetQueries().RemoveTag(ctx, repository.RemoveTagParams{
-		Title:  req.Tag,
+		Tag:    req.Tag,
 		NodeId: id,
 	})
 	if err != nil {
@@ -95,7 +95,7 @@ func (s *nodesService) RemoveTag(ctx context.Context, req *pb.TagRequest) (*pb.N
 	}
 	return &pb.Node{
 		Id:   req.ModeId,
-		Name: node.Title.String,
+		Name: node.Name.String,
 		Tags: tags,
 	}, nil
 }

@@ -13,22 +13,22 @@ import (
 
 const addTag = `-- name: AddTag :exec
 
-INSERT INTO tags (node_id, title) VALUES ($1,$2)
+INSERT INTO tags (node_id, tag) VALUES ($1,$2)
 `
 
 type AddTagParams struct {
 	NodeId pgtype.UUID
-	Title  string
+	Tag    string
 }
 
 func (q *Queries) AddTag(ctx context.Context, arg AddTagParams) error {
-	_, err := q.db.Exec(ctx, addTag, arg.NodeId, arg.Title)
+	_, err := q.db.Exec(ctx, addTag, arg.NodeId, arg.Tag)
 	return err
 }
 
 const getNode = `-- name: GetNode :one
 SELECT
-    id, group_id, title, first_connection, last_connection
+    id, group_id, name, first_connection, last_connection
 FROM
     nodes n
 WHERE
@@ -43,7 +43,7 @@ func (q *Queries) GetNode(ctx context.Context, id pgtype.UUID) (Node, error) {
 	err := row.Scan(
 		&i.Id,
 		&i.GroupId,
-		&i.Title,
+		&i.Name,
 		&i.FirstConnection,
 		&i.LastConnection,
 	)
@@ -52,7 +52,7 @@ func (q *Queries) GetNode(ctx context.Context, id pgtype.UUID) (Node, error) {
 
 const getNodes = `-- name: GetNodes :many
 SELECT
-    id, group_id, title, first_connection, last_connection
+    id, group_id, name, first_connection, last_connection
 FROM
     nodes n
 WHERE
@@ -71,7 +71,7 @@ func (q *Queries) GetNodes(ctx context.Context, groupID pgtype.UUID) ([]Node, er
 		if err := rows.Scan(
 			&i.Id,
 			&i.GroupId,
-			&i.Title,
+			&i.Name,
 			&i.FirstConnection,
 			&i.LastConnection,
 		); err != nil {
@@ -87,7 +87,7 @@ func (q *Queries) GetNodes(ctx context.Context, groupID pgtype.UUID) ([]Node, er
 
 const getTags = `-- name: GetTags :many
 
-SELECT t.title FROM tags t WHERE t.node_id = $1
+SELECT t.tag FROM tags t WHERE t.node_id = $1
 `
 
 func (q *Queries) GetTags(ctx context.Context, nodeID pgtype.UUID) ([]string, error) {
@@ -98,11 +98,11 @@ func (q *Queries) GetTags(ctx context.Context, nodeID pgtype.UUID) ([]string, er
 	defer rows.Close()
 	var items []string
 	for rows.Next() {
-		var title string
-		if err := rows.Scan(&title); err != nil {
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
 			return nil, err
 		}
-		items = append(items, title)
+		items = append(items, tag)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -111,17 +111,18 @@ func (q *Queries) GetTags(ctx context.Context, nodeID pgtype.UUID) ([]string, er
 }
 
 const newNode = `-- name: NewNode :exec
-INSERT INTO nodes (id, group_id, first_connection, last_connection) 
-VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+INSERT INTO nodes (id, group_id, name, first_connection, last_connection) 
+VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 `
 
 type NewNodeParams struct {
 	Id      pgtype.UUID
 	GroupId pgtype.UUID
+	Name    pgtype.Text
 }
 
 func (q *Queries) NewNode(ctx context.Context, arg NewNodeParams) error {
-	_, err := q.db.Exec(ctx, newNode, arg.Id, arg.GroupId)
+	_, err := q.db.Exec(ctx, newNode, arg.Id, arg.GroupId, arg.Name)
 	return err
 }
 
@@ -147,16 +148,16 @@ func (q *Queries) ReconnectNode(ctx context.Context, arg ReconnectNodeParams) er
 
 const removeTag = `-- name: RemoveTag :exec
 
-DELETE FROM tags t WHERE t.node_id = $1 AND t.title = $2
+DELETE FROM tags t WHERE t.node_id = $1 AND t.tag= $2
 `
 
 type RemoveTagParams struct {
 	NodeId pgtype.UUID
-	Title  string
+	Tag    string
 }
 
 func (q *Queries) RemoveTag(ctx context.Context, arg RemoveTagParams) error {
-	_, err := q.db.Exec(ctx, removeTag, arg.NodeId, arg.Title)
+	_, err := q.db.Exec(ctx, removeTag, arg.NodeId, arg.Tag)
 	return err
 }
 

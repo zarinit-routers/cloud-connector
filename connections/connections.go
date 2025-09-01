@@ -9,6 +9,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/gorilla/websocket"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/zarinit-routers/cloud-connector/models"
 	"github.com/zarinit-routers/cloud-connector/storage/repository"
 )
@@ -41,6 +42,9 @@ func AppendConnection(node *AuthData, conn *websocket.Conn) {
 		repository.GetQueries().NewNode(ctx, repository.NewNodeParams{
 			Id:      node.NodeID,
 			GroupId: node.GroupID,
+			Name: pgtype.Text{
+				String: GenNodeName(),
+				Valid:  true},
 		})
 	}
 

@@ -11,12 +11,12 @@ import (
 type Node struct {
 	Id              pgtype.UUID
 	GroupId         pgtype.UUID
-	Title           pgtype.Text
+	Name            pgtype.Text
 	FirstConnection pgtype.Timestamptz
 	LastConnection  pgtype.Timestamptz
 }
 
 type Tag struct {
 	NodeId pgtype.UUID
-	Title  string
+	Tag    string
 }

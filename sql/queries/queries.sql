@@ -9,8 +9,8 @@ LIMIT
     1;
 
 -- name: NewNode :exec
-INSERT INTO nodes (id, group_id, first_connection, last_connection) 
-VALUES (@id, @group_id, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO nodes (id, group_id, name, first_connection, last_connection) 
+VALUES (@id, @group_id, @name, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- name: GetNodes :many
 SELECT
@@ -40,12 +40,12 @@ WHERE
 
 -- name: AddTag :exec
 
-INSERT INTO tags (node_id, title) VALUES (@node_id,@title);
+INSERT INTO tags (node_id, tag) VALUES (@node_id,@tag);
 
 -- name: RemoveTag :exec
 
-DELETE FROM tags t WHERE t.node_id = @node_id AND t.title = @title;
+DELETE FROM tags t WHERE t.node_id = @node_id AND t.tag= @tag;
 
 -- name: GetTags :many
 
-SELECT t.title FROM tags t WHERE t.node_id = @node_id;
+SELECT t.tag FROM tags t WHERE t.node_id = @node_id;
