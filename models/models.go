@@ -9,7 +9,7 @@ type JsonMap = map[string]any
 
 type UUID = pgtype.UUID
 
-func UUIDFromString(str string) (UUID, error) {
+func ParseUUID(str string) (UUID, error) {
 
 	id := pgtype.UUID{}
 	err := id.Scan(str)

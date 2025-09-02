@@ -141,8 +141,8 @@ func checkAuth(r *http.Request) (*AuthData, error) {
 		return nil, err
 	}
 
-	routerId, idParseErr := models.UUIDFromString(r.Header.Get(RouterIDHeader))
-	groupId, groupParseErr := models.UUIDFromString(groupIdStr)
+	routerId, idParseErr := models.ParseUUID(r.Header.Get(RouterIDHeader))
+	groupId, groupParseErr := models.ParseUUID(groupIdStr)
 
 	if err := errors.Join(idParseErr, groupParseErr); err != nil {
 		log.Error("Bad UUID specifications", "error", err)
@@ -167,7 +167,7 @@ func getAddress() string {
 }
 
 func SendRequest(nodeId string, r *models.ToNodeRequest) error {
-	id, err := models.UUIDFromString(nodeId)
+	id, err := models.ParseUUID(nodeId)
 	if err != nil {
 		return fmt.Errorf("bad node id %q: %s", nodeId, err)
 	}

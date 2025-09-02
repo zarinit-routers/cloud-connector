@@ -17,7 +17,7 @@ func newNodesService() *nodesService {
 }
 
 func (s *nodesService) NodesByGroup(ctx context.Context, req *pb.NodesByGroupRequest) (*pb.NodesResponse, error) {
-	groupId, err := models.UUIDFromString(req.GroupId)
+	groupId, err := models.ParseUUID(req.GroupId)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (s *nodesService) NodesByGroup(ctx context.Context, req *pb.NodesByGroupReq
 }
 
 func (s *nodesService) AddTag(ctx context.Context, req *pb.TagRequest) (*pb.Node, error) {
-	id, err := models.UUIDFromString(req.ModeId)
+	id, err := models.ParseUUID(req.ModeId)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (s *nodesService) AddTag(ctx context.Context, req *pb.TagRequest) (*pb.Node
 }
 
 func (s *nodesService) RemoveTag(ctx context.Context, req *pb.TagRequest) (*pb.Node, error) {
-	id, err := models.UUIDFromString(req.ModeId)
+	id, err := models.ParseUUID(req.ModeId)
 	if err != nil {
 		return nil, err
 	}
