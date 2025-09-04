@@ -127,24 +127,13 @@ func serveConnection(nodeId models.UUID, conn *websocket.Conn) {
 
 func checkAuth(r *http.Request) (*AuthData, error) {
 
-	var request struct {
-		Token string `json:"token"`
-	}
-
-	var body []byte
-	r.Body.Read(body)
-
-	if err := json.Unmarshal(body, &request); err != nil {
-		log.Error("Failed to unmarshal request", "error", err)
-		return nil, err
-	}
-
-	if request.Token == "" {
+	tokenStr := r.Header.Get(AuthorizationHeader)
+	if tokenStr == "" {
 		log.Error("Failed to authenticate, token is empty")
 		return nil, fmt.Errorf("missing token")
 	}
 
-	token, err := jwt.Parse(request.Token, getJwtKey())
+	token, err := jwt.Parse(tokenStr, getJwtKey())
 	if err != nil || !token.Valid {
 		log.Error("Failed to parse token", "error", err)
 		return nil, err
