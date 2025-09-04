@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/charmbracelet/log"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/zarinit-routers/cloud-connector/models"
@@ -124,25 +126,36 @@ func serveConnection(nodeId models.UUID, conn *websocket.Conn) {
 }
 
 func checkAuth(r *http.Request) (*AuthData, error) {
-	passphrase := r.Header.Get(AuthorizationHeader)
-	groupIdStr := r.Header.Get(GroupIDHeader)
 
-	if passphrase == "" {
-		log.Error("Failed to authenticate passphrase header is empty")
-		return nil, fmt.Errorf("missing passphrase header")
-	}
-	if groupIdStr == "" {
-		log.Error("Group ID header is empty")
-		return nil, fmt.Errorf("missing group id header %q", GroupIDHeader)
+	var request struct {
+		Token string `json:"token"`
 	}
 
-	if err := authenticateInGroup(groupIdStr, passphrase); err != nil {
-		log.Error("Failed to authenticate", "error", err, "groupId", groupIdStr, "passphrase", passphrase)
+	var body []byte
+	r.Body.Read(body)
+
+	if err := json.Unmarshal(body, &request); err != nil {
+		log.Error("Failed to unmarshal request", "error", err)
 		return nil, err
 	}
 
-	routerId, idParseErr := models.ParseUUID(r.Header.Get(RouterIDHeader))
-	groupId, groupParseErr := models.ParseUUID(groupIdStr)
+	if request.Token == "" {
+		log.Error("Failed to authenticate, token is empty")
+		return nil, fmt.Errorf("missing token")
+	}
+
+	token, err := jwt.Parse(request.Token, getJwtKey())
+	if err != nil || !token.Valid {
+		log.Error("Failed to parse token", "error", err)
+		return nil, err
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		log.Error("Failed to get claims", "error", err)
+		return nil, err
+	}
+	routerId, idParseErr := models.ParseUUID(claims["id"].(string))
+	groupId, groupParseErr := models.ParseUUID(claims["groupId"].(string))
 
 	if err := errors.Join(idParseErr, groupParseErr); err != nil {
 		log.Error("Bad UUID specifications", "error", err)
@@ -153,13 +166,6 @@ func checkAuth(r *http.Request) (*AuthData, error) {
 		NodeID:  routerId,
 		GroupID: groupId,
 	}, nil
-}
-
-// Uses gRPC to connect to auth service
-//
-// TODO: properly implement
-func authenticateInGroup(groupId string, passphrase string) error {
-	return nil
 }
 
 func getAddress() string {
@@ -182,4 +188,14 @@ func SendRequest(nodeId string, r *models.ToNodeRequest) error {
 	}
 
 	return conn.WriteMessage(websocket.TextMessage, message)
+}
+
+func getJwtKey() jwt.Keyfunc {
+	return func(t *jwt.Token) (any, error) {
+		key := os.Getenv("JWT_SECURITY_KEY")
+		if key == "" {
+			return nil, fmt.Errorf("JWT_SECURITY_KEY not specified")
+		}
+		return []byte(key), nil
+	}
 }
