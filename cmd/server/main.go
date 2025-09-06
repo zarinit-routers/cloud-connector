@@ -7,9 +7,9 @@ import (
 	"github.com/charmbracelet/log"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/zarinit-routers/cloud-connector/connections"
-	"github.com/zarinit-routers/cloud-connector/grpc"
 	"github.com/zarinit-routers/cloud-connector/models"
 	"github.com/zarinit-routers/cloud-connector/queue"
+	"github.com/zarinit-routers/cloud-connector/server"
 	"github.com/zarinit-routers/cloud-connector/storage/database"
 )
 
@@ -35,7 +35,9 @@ func main() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		grpc.Serve()
+		if err := server.Serve(); err != nil {
+			log.Fatal("Failed serve HTTP server", "error", err)
+		}
 	}()
 
 	queue.AddHandler(queueHandler)
