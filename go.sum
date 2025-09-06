@@ -130,6 +130,10 @@ github.com/zarinit-routers/middleware v0.2.3 h1:GBTV9vA1qCCN82Ryt7HQxE3/FhdVb2d/
 github.com/zarinit-routers/middleware v0.2.3/go.mod h1:34uQ10BXCRvB0SpFUzP/mW7HnivXHujxNdzZ5LElDtY=
 github.com/zarinit-routers/middleware v0.2.4 h1:xIgqkc79PClI8oO9bfmVeSEV5dTiYFa3sSzNQKdj3Tg=
 github.com/zarinit-routers/middleware v0.2.4/go.mod h1:34uQ10BXCRvB0SpFUzP/mW7HnivXHujxNdzZ5LElDtY=
+github.com/zarinit-routers/middleware v0.3.0 h1:aZsC+jfOhb3bx37lwGfMdcTgJ2N1bVct5dWRS4i5Cks=
+github.com/zarinit-routers/middleware v0.3.0/go.mod h1:34uQ10BXCRvB0SpFUzP/mW7HnivXHujxNdzZ5LElDtY=
+github.com/zarinit-routers/middleware v0.3.1 h1:M+N6w89ouplsJrXJate24k9WbsHwnt1WbvOZsi9UjUE=
+github.com/zarinit-routers/middleware v0.3.1/go.mod h1:34uQ10BXCRvB0SpFUzP/mW7HnivXHujxNdzZ5LElDtY=
 golang.org/x/arch v0.0.0-20210923205945-b76863e36670/go.mod h1:5om86z9Hs0C8fWVUuoMHwpExlXzs5Tkyp9hOrfG7pp8=
 golang.org/x/arch v0.8.0 h1:3wRIsP3pM4yUptoR96otTUOXI367OS0+c9eeRi9doIc=
 golang.org/x/arch v0.8.0/go.mod h1:FEVrYAQjsQXMVJ1nsMoVVXPZg6p2JE2mx8psSWTDQys=
