@@ -13,11 +13,10 @@ import (
 func GetClientsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user auth.AuthData
-		if data, exists := c.Get(auth.AUTH_DATA_KEY); !exists {
+		if err := auth.GetUser(c, &user); err != nil {
+			log.Error("Failed get user", "error", err)
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
-		} else {
-			user = data.(auth.AuthData)
 		}
 		organizationId, err := models.ParseUUID(user.OrganizationId)
 		if err != nil {
@@ -62,11 +61,10 @@ type Node struct {
 func GetSingleClientHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user auth.AuthData
-		if data, exists := c.Get(auth.AUTH_DATA_KEY); !exists {
+		if err := auth.GetUser(c, &user); err != nil {
+			log.Error("Failed get user", "error", err)
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
-		} else {
-			user = data.(auth.AuthData)
 		}
 		organizationId, err := models.ParseUUID(user.OrganizationId)
 		if err != nil {
