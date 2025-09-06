@@ -18,6 +18,7 @@ func GetClientsHandler() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		log.Info("User", "user", user)
 		organizationId, err := models.ParseUUID(user.OrganizationId)
 		if err != nil {
 			log.Error("Failed parse organization id", "error", err)
@@ -66,6 +67,7 @@ func GetSingleClientHandler() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+		log.Info("User", "user", user)
 		organizationId, err := models.ParseUUID(user.OrganizationId)
 		if err != nil {
 			log.Error("Failed parse organization id", "error", err)
