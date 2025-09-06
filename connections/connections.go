@@ -68,6 +68,8 @@ func closeConn(nodeId models.UUID, conn *websocket.Conn) {
 func Serve() {
 	srv := http.NewServeMux()
 	srv.HandleFunc("/api/ipc/connect", func(w http.ResponseWriter, r *http.Request) {
+		log.Info("New connection", "address", r.RemoteAddr)
+
 		auth, err := checkAuth(r)
 		if err != nil {
 			log.Error("Failed authenticate connection", "error", err)
