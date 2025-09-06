@@ -11,5 +11,6 @@ COPY . .
 RUN go build -o srv cmd/server/main.go 
 
 EXPOSE 8070
+EXPOSE 8071
 
 CMD ["/app/srv"]

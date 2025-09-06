@@ -158,7 +158,8 @@ func checkAuth(r *http.Request) (*AuthData, error) {
 }
 
 func getAddress() string {
-	return ":8080"
+	log.Warn("Websocket connection address is hardcoded, remove this ASAP")
+	return ":8071"
 }
 
 func SendRequest(nodeId string, r *models.ToNodeRequest) error {
