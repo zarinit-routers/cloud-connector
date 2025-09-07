@@ -115,7 +115,8 @@ func serveConnection(nodeId models.UUID, conn *websocket.Conn) {
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Error("Failed to read message", "error", err)
-			if err == websocket.ErrCloseSent {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway) {
+				log.Error("Unexpected closing connection", "error", err)
 				return
 			}
 			continue
