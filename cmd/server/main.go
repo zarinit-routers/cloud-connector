@@ -79,11 +79,13 @@ func queueHandler(m *amqp.Delivery) error {
 
 func websocketHandler(body []byte) error {
 	var response models.FromNodeResponse
-	defer wsLog.Info("New message", "response", response)
 	if err := json.Unmarshal(body, &response); err != nil {
 		wsLog.Error("Failed to unmarshal message", "error", err)
 		return err
 	}
+
+	wsLog.Info("New message", "requestId", response.RequestID)
+
 	if err := queue.SendResponse(response.RequestID, response.ToCloud()); err != nil {
 		wsLog.Error("Failed to send response", "error", err)
 		return err

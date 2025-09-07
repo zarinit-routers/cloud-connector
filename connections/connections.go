@@ -106,9 +106,14 @@ func AddHandler(handler MessageHandlerFunc) {
 
 func serveConnection(nodeId models.UUID, conn *websocket.Conn) {
 	for {
+
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Error("Failed to read message", "error", err)
+			if err == websocket.ErrCloseSent {
+				closeConn(nodeId, conn)
+				return
+			}
 			continue
 		}
 
