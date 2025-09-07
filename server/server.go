@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/zarinit-routers/cloud-connector/server/handlers"
 	"github.com/zarinit-routers/middleware/auth"
+	"github.com/zarinit-routers/middleware/cors"
 )
 
 const (
@@ -44,6 +45,9 @@ func Serve() error {
 	}
 
 	srv := gin.Default()
+	srv.Use(cors.Middleware([]string{
+		"localhost:3000", // For development purposes
+	}))
 	api := srv.Group("/api/clients")
 	api.GET("/", auth.Middleware(), handlers.GetClientsHandler())
 	api.GET("/:id", auth.Middleware(), handlers.GetSingleClientHandler())
