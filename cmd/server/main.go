@@ -48,35 +48,46 @@ func main() {
 	wg.Wait()
 }
 
+var (
+	qlog  = log.WithPrefix("Queue")
+	wsLog = log.WithPrefix("WebSocket")
+)
+
 func queueHandler(m *amqp.Delivery) error {
 	requestId := m.CorrelationId
+
+	qlog.Info("New message", "requestId", requestId, "body", string(m.Body))
+
 	var cloudRequest models.FromCloudRequest
 	if err := json.Unmarshal(m.Body, &cloudRequest); err != nil {
-		log.Error("Failed to unmarshal message", "error", err)
+		qlog.Error("Failed to unmarshal message", "error", err)
 		return err
 	}
 
 	if err := cloudRequest.Validate(); err != nil {
-		log.Error("Failed validate request from cloud", "error", err, "requestId", requestId)
+		qlog.Error("Failed validate request from cloud", "error", err, "requestId", requestId)
 		return fmt.Errorf("failed validate request from cloud: %s", err)
 	}
 
 	if err := connections.SendRequest(cloudRequest.NodeID, cloudRequest.ToNode(requestId)); err != nil {
-		log.Error("Failed to send request", "error", err)
+		qlog.Error("Failed to send request", "error", err)
 		return err
 	}
+	qlog.Info("Message handled", "requestId", requestId)
 	return nil
 }
 
 func websocketHandler(body []byte) error {
-	var request models.FromNodeResponse
-	if err := json.Unmarshal(body, &request); err != nil {
-		log.Error("Failed to unmarshal message", "error", err)
+	var response models.FromNodeResponse
+	defer wsLog.Info("New message", "response", response)
+	if err := json.Unmarshal(body, &response); err != nil {
+		wsLog.Error("Failed to unmarshal message", "error", err)
 		return err
 	}
-	if err := queue.SendResponse(request.RequestID, request.ToCloud()); err != nil {
-		log.Error("Failed to send response", "error", err)
+	if err := queue.SendResponse(response.RequestID, response.ToCloud()); err != nil {
+		wsLog.Error("Failed to send response", "error", err)
 		return err
 	}
+	wsLog.Info("Message handled", "requestId", response.RequestID)
 	return nil
 }
