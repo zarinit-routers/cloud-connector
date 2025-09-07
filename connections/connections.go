@@ -56,9 +56,9 @@ func AppendConnection(node *AuthData, conn *websocket.Conn) {
 func closeConn(nodeId models.UUID, conn *websocket.Conn) {
 	addr := fmt.Sprintf("%s %s", conn.RemoteAddr().Network(), conn.RemoteAddr().String())
 
-	if err := conn.Close(); err != nil {
-		log.Error("Failed close connection, process will be forced", "address", addr, "error", err)
-	}
+	// if err := conn.Close(); err != nil {
+	// 	log.Error("Failed close connection, process will be forced", "address", addr, "error", err)
+	// }
 
 	repository.GetQueries().UpdateLastConnection(ctx, nodeId)
 
