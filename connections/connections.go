@@ -116,14 +116,12 @@ func serveConnection(nodeId models.UUID, conn *websocket.Conn) {
 		if err != nil {
 			log.Error("Failed to read message", "error", err)
 			if err == websocket.ErrCloseSent {
-				closeConn(nodeId, conn)
 				return
 			}
 			continue
 		}
 
 		if messageType == websocket.CloseMessage {
-			closeConn(nodeId, conn)
 			return
 		}
 
