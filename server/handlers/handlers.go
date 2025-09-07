@@ -104,7 +104,7 @@ func GetSingleClientHandler() gin.HandlerFunc {
 			return
 		}
 
-		if data.GroupId != organizationId {
+		if data.GroupId != organizationId && !user.IsAdmin() {
 			log.Error("Try to access to node outside of own organization", "node.OrganizationId", data.GroupId.String(), "organizationId", organizationId.String())
 			c.AbortWithStatus(http.StatusForbidden)
 			return
