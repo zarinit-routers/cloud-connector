@@ -46,7 +46,7 @@ func Serve() error {
 
 	srv := gin.Default()
 	srv.Use(cors.Middleware([]string{
-		"localhost:3000", // For development purposes
+		"http://localhost:3000", // For development purposes
 	}))
 	api := srv.Group("/api/clients")
 	api.GET("/", auth.Middleware(), handlers.GetClientsHandler())
