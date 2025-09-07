@@ -105,8 +105,13 @@ func AddHandler(handler MessageHandlerFunc) {
 }
 
 func serveConnection(nodeId models.UUID, conn *websocket.Conn) {
+	defer func() {
+		if recover() != nil {
+			log.Error("Connection closed with panic", "nodeId", nodeId, "panic", recover())
+		}
+		closeConn(nodeId, conn)
+	}()
 	for {
-
 		messageType, message, err := conn.ReadMessage()
 		if err != nil {
 			log.Error("Failed to read message", "error", err)
