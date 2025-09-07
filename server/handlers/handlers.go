@@ -34,6 +34,7 @@ func GetClientsHandler() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
+		log.Info("Nodes", "nodes", data)
 		nodes := []Node{}
 		for _, d := range data {
 
