@@ -1,6 +1,8 @@
 package models
 
 import (
+	"fmt"
+
 	"github.com/charmbracelet/log"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -40,6 +42,18 @@ type FromNodeResponse struct {
 	RequestID string  `json:"requestId"`
 	Data      JsonMap `json:"data"`
 	Error     string  `json:"error"`
+}
+
+func (r *FromCloudRequest) Validate() error {
+	if r.NodeID == "" {
+		return fmt.Errorf("empty node id specified")
+	}
+
+	if r.Command == "" {
+		return fmt.Errorf("command not specified")
+	}
+
+	return nil
 }
 
 func (r *FromCloudRequest) ToNode(requestId string) *ToNodeRequest {

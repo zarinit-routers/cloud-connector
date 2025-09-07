@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/charmbracelet/log"
@@ -54,6 +55,12 @@ func queueHandler(m *amqp.Delivery) error {
 		log.Error("Failed to unmarshal message", "error", err)
 		return err
 	}
+
+	if err := cloudRequest.Validate(); err != nil {
+		log.Error("Failed validate request from cloud", "error", err, "requestId", requestId)
+		return fmt.Errorf("failed validate request from cloud: %s", err)
+	}
+
 	if err := connections.SendRequest(cloudRequest.NodeID, cloudRequest.ToNode(requestId)); err != nil {
 		log.Error("Failed to send request", "error", err)
 		return err
