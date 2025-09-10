@@ -47,7 +47,7 @@ func Serve() error {
 	api := srv.Group("/api/clients")
 	api.GET("/", auth.Middleware(), handlers.GetClientsHandler())
 	api.GET("/:id", auth.Middleware(), handlers.GetSingleClientHandler())
-	api.POST("/tags/add", auth.Middleware())
-	api.POST("/tags/remove", auth.Middleware())
+	api.POST("/tags/add", auth.Middleware(), handlers.AddTagsHandler())
+	api.POST("/tags/remove", auth.Middleware(), handlers.RemoveTagsHandler())
 	return srv.Run(addr)
 }
