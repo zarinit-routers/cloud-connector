@@ -36,7 +36,6 @@ func AppendConnection(node *AuthData, conn *websocket.Conn) {
 
 	if existingNode, _ := repository.GetNode(node.NodeID); existingNode != nil {
 		log.Warn("Connection with that node already exists, closing it", "nodeId", node.NodeID)
-		closeConn(node.NodeID, connections[node.NodeID])
 		if _, err := repository.ReconnectNode(node.NodeID, existingNode.OrganizationID); err != nil {
 			log.Error("Failed to reconnect node", "error", err)
 		}
