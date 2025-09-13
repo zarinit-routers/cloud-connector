@@ -3,24 +3,12 @@ package models
 import (
 	"fmt"
 
-	"github.com/charmbracelet/log"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/google/uuid"
 )
 
 type JsonMap = map[string]any
 
-type UUID = pgtype.UUID
-
-func ParseUUID(str string) (UUID, error) {
-
-	id := pgtype.UUID{}
-	err := id.Scan(str)
-	if err != nil {
-		log.Warn("Bad UUID string", "string", str, "error", err)
-		return id, err
-	}
-	return id, nil
-}
+type UUID = uuid.UUID
 
 type FromCloudRequest struct {
 	NodeID  string  `json:"nodeId"`

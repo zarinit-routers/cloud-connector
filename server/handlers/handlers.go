@@ -5,7 +5,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/gin-gonic/gin"
-	"github.com/zarinit-routers/cloud-connector/models"
+	"github.com/google/uuid"
 	"github.com/zarinit-routers/cloud-connector/storage/repository"
 	"github.com/zarinit-routers/middleware/auth"
 )
@@ -21,14 +21,14 @@ func GetClientsHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := models.ParseUUID(user.OrganizationId)
+		organizationId, err := uuid.Parse(user.OrganizationId)
 		if err != nil {
 			log.Error("Failed parse organization id", "error", err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
-		data, err := repository.GetQueries().GetNodes(c.Request.Context(), organizationId)
+		data, err := repository.GetNodes(organizationId)
 		if err != nil {
 			log.Error("Failed get nodes from repository", "error", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -36,20 +36,6 @@ func GetClientsHandler() gin.HandlerFunc {
 		}
 		log.Info("Nodes", "nodes", data)
 		nodes := []Node{}
-		for _, d := range data {
-
-			tags, err := repository.GetQueries().GetTags(c.Request.Context(), d.Id)
-			if err != nil {
-				log.Error("Failed get tags from repository", "error", err, "nodeId", d.Id.String())
-				c.AbortWithStatus(http.StatusInternalServerError)
-				return
-			}
-			nodes = append(nodes, Node{
-				Id:   d.Id.String(),
-				Name: d.Name.String,
-				Tags: tags,
-			})
-		}
 		c.JSON(http.StatusOK, gin.H{
 			"nodes": nodes,
 		})
@@ -73,7 +59,7 @@ func GetSingleClientHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := models.ParseUUID(user.OrganizationId)
+		organizationId, err := uuid.Parse(user.OrganizationId)
 		if err != nil {
 			log.Error("Failed parse organization id", "error", err)
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -90,37 +76,26 @@ func GetSingleClientHandler() gin.HandlerFunc {
 			return
 		}
 
-		id, err := models.ParseUUID(uri.Id)
+		id, err := uuid.Parse(uri.Id)
 		if err != nil {
 			log.Error("Failed parse id", "error", err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
-		data, err := repository.GetQueries().GetNode(c.Request.Context(), id)
+		node, err := repository.GetNode(id)
 		if err != nil {
 			log.Error("Failed get nodes from repository", "error", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		if data.GroupId != organizationId && !user.IsAdmin() {
-			log.Error("Try to access to node outside of own organization", "node.OrganizationId", data.GroupId.String(), "organizationId", organizationId.String())
+		if node.OrganizationID != organizationId && !user.IsAdmin() {
+			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.OrganizationID.String(), "organizationId", organizationId.String())
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
 
-		tags, err := repository.GetQueries().GetTags(c.Request.Context(), data.Id)
-		if err != nil {
-			log.Error("Failed get tags from repository", "error", err, "nodeId", data.Id.String())
-			c.AbortWithStatus(http.StatusInternalServerError)
-			return
-		}
-		node := Node{
-			Id:   data.Id.String(),
-			Name: data.Name.String,
-			Tags: tags,
-		}
 		c.JSON(http.StatusOK, gin.H{
 			"node": node,
 		})
@@ -139,7 +114,7 @@ func AddTagsHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := models.ParseUUID(user.OrganizationId)
+		organizationId, err := uuid.Parse(user.OrganizationId)
 		if err != nil {
 			log.Error("Failed parse organization id", "error", err)
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -156,21 +131,21 @@ func AddTagsHandler() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		id, err := models.ParseUUID(request.Id)
+		id, err := uuid.Parse(request.Id)
 		if err != nil {
 			log.Error("Failed parse id", "error", err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		node, err := repository.GetQueries().GetNode(c.Request.Context(), id)
+		node, err := repository.GetNode(id)
 		if err != nil {
-			log.Error("Failed get node from repository", "error", err, "nodeId", id.String())
+			log.Error("Failed get node from repository", "error", err, "nodeId", id)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		if node.GroupId != organizationId && !user.IsAdmin() {
-			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.GroupId.String(), "organizationId", organizationId.String())
+		if node.OrganizationID != organizationId && !user.IsAdmin() {
+			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.OrganizationID, "organizationId", organizationId)
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
@@ -180,10 +155,7 @@ func AddTagsHandler() gin.HandlerFunc {
 				log.Warn("Tag is empty")
 				continue
 			}
-			err = repository.GetQueries().AddTag(c.Request.Context(), repository.AddTagParams{
-				NodeId: id,
-				Tag:    tag,
-			})
+			_, err = repository.NewTag(id, tag)
 			if err != nil {
 				log.Error("Failed add tags to repository", "error", err, "nodeId", id.String())
 				c.AbortWithStatus(http.StatusInternalServerError)
@@ -207,7 +179,7 @@ func RemoveTagsHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := models.ParseUUID(user.OrganizationId)
+		organizationId, err := uuid.Parse(user.OrganizationId)
 		if err != nil {
 			log.Error("Failed parse organization id", "error", err)
 			c.AbortWithStatus(http.StatusBadRequest)
@@ -224,21 +196,21 @@ func RemoveTagsHandler() gin.HandlerFunc {
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		id, err := models.ParseUUID(request.Id)
+		id, err := uuid.Parse(request.Id)
 		if err != nil {
 			log.Error("Failed parse id", "error", err)
 			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
-		node, err := repository.GetQueries().GetNode(c.Request.Context(), id)
+		node, err := repository.GetNode(id)
 		if err != nil {
 			log.Error("Failed get node from repository", "error", err, "nodeId", id.String())
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
 
-		if node.GroupId != organizationId && !user.IsAdmin() {
-			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.GroupId.String(), "organizationId", organizationId.String())
+		if node.OrganizationID != organizationId && !user.IsAdmin() {
+			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.OrganizationID, "organizationId", organizationId)
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
@@ -248,10 +220,7 @@ func RemoveTagsHandler() gin.HandlerFunc {
 				log.Warn("Tag is empty")
 				continue
 			}
-			err = repository.GetQueries().RemoveTag(c.Request.Context(), repository.RemoveTagParams{
-				NodeId: id,
-				Tag:    tag,
-			})
+			err = repository.RemoveTag(id, tag)
 			if err != nil {
 				log.Error("Failed add tags to repository", "error", err, "nodeId", id.String())
 				c.AbortWithStatus(http.StatusInternalServerError)

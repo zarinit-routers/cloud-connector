@@ -1,23 +1,18 @@
 package database
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/charmbracelet/log"
-	pgx "github.com/jackc/pgx/v5"
-	"github.com/zarinit-routers/cloud-connector/storage/repository"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 const (
 	ENV_CONNECTION_STRING = "DATABASE_CONNECTION_STRING"
 	ENV_AUTO_MIGRATE      = "DATABASE_AUTO_MIGRATE"
-)
-
-var (
-	connection *pgx.Conn
 )
 
 func getConnectionString() (string, error) {
@@ -38,25 +33,35 @@ func shouldMigrate() bool {
 }
 
 func Setup() error {
-	connectionString, err := getConnectionString()
+
+	if !shouldMigrate() {
+		return nil
+	}
+	db, err := Connect()
 	if err != nil {
-		return fmt.Errorf("bad connection string: %s", err)
-	}
-	log.Info("Connecting to database", "connectionString", connectionString)
-
-	if conn, err := pgx.Connect(context.Background(), connectionString); err != nil {
+		log.Error("Error connecting to database", "error", err)
 		return err
-	} else {
-		connection = conn
 	}
-
-	repository.Setup(connection)
-
-	if shouldMigrate() {
-		if err := migrateDb(); err != nil {
-			return fmt.Errorf("migrations failed: %s", err)
-		}
+	sqlDb, err := db.DB()
+	if err != nil {
+		return err
+	}
+	if err := migrateDb(sqlDb); err != nil {
+		return fmt.Errorf("migrations failed: %s", err)
 	}
 
 	return nil
+}
+
+func Connect() (*gorm.DB, error) {
+	connectionString, err := getConnectionString()
+	if err != nil {
+		return nil, fmt.Errorf("bad connection string: %s", err)
+	}
+	log.Info("Connecting to database", "connectionString", connectionString)
+	db, err := gorm.Open(postgres.Open(connectionString), &gorm.Config{})
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }

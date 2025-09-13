@@ -1,41 +1,22 @@
 package database
 
 import (
-	"context"
-	"fmt"
+	"database/sql"
 
 	"github.com/charmbracelet/log"
-	"github.com/zarinit-routers/cloud-connector/sql/migrations"
+
+	migrate "github.com/rubenv/sql-migrate"
 )
 
-func migrateDb() error {
+func migrateDb(db *sql.DB) error {
+	source := migrate.FileMigrationSource{
+		Dir: "./sql/migrations",
+	}
 	log.Info("Migrating database...")
-	files, err := migrations.MigrationsFS.ReadDir(".")
+	count, err := migrate.Exec(db, "postgres", source, migrate.Up)
 	if err != nil {
-		return fmt.Errorf("failed read embed directory .: %s", err)
+		return err
 	}
-	for _, migrationFile := range files {
-		if migrationFile.IsDir() {
-			continue
-		}
-		log.Info("Migration started", "name", migrationFile.Name())
-		content, err := migrations.MigrationsFS.ReadFile(migrationFile.Name())
-		if err != nil {
-			return fmt.Errorf("failed read embed file %q: %s", migrationFile.Name(), err)
-		}
-
-		tag, err := connection.Exec(context.TODO(), string(content))
-		if err != nil {
-			log.Error("Failed execute migration",
-				"error", err,
-				"migrationFile", migrationFile.Name(),
-				"migrationFileContent", content,
-				"tag/status", tag.String(),
-			)
-			return fmt.Errorf("failed execute migration %q: %s", migrationFile.Name(), err)
-		}
-	}
-	log.Info("Database migrated")
+	log.Info("Database migrated", "migrations", count)
 	return nil
-
 }
