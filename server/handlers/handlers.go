@@ -28,14 +28,13 @@ func GetClientsHandler() gin.HandlerFunc {
 			return
 		}
 
-		data, err := repository.GetNodes(organizationId)
+		nodes, err := repository.GetNodes(organizationId)
 		if err != nil {
 			log.Error("Failed get nodes from repository", "error", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
 			return
 		}
-		log.Info("Nodes", "nodes", data)
-		nodes := []Node{}
+		log.Info("Nodes", "nodes", nodes)
 		c.JSON(http.StatusOK, gin.H{
 			"nodes": nodes,
 		})
