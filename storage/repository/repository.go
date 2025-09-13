@@ -31,9 +31,8 @@ type Node struct {
 }
 
 type Tag struct {
-	*ModelBase
-	NodeID uuid.UUID `json:"nodeId"`
-	Tag    string    `json:"tag"`
+	NodeID uuid.UUID `gorm:"primary_key" json:"nodeId"`
+	Tag    string    `gorm:"primary_key" json:"tag"`
 }
 
 func GetNode(id uuid.UUID) (*Node, error) {
@@ -57,9 +56,6 @@ func GetNodes(organizationID uuid.UUID) ([]*Node, error) {
 
 func NewTag(nodeId uuid.UUID, tag string) (*Tag, error) {
 	model := &Tag{
-		ModelBase: &ModelBase{
-			ID: uuid.New(),
-		},
 		NodeID: nodeId,
 		Tag:    tag,
 	}
