@@ -1,3 +1,4 @@
+-- +migrate Up
 CREATE TABLE
     IF NOT EXISTS nodes (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
@@ -13,3 +14,8 @@ CREATE TABLE
         tag VARCHAR(64) NOT NULL,
         PRIMARY KEY (node_id, tag)
     );
+
+-- +migrate Down
+DROP TABLE tags;
+
+DROP TABLE nodes;
