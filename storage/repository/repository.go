@@ -45,9 +45,9 @@ func GetNode(id uuid.UUID) (*Node, error) {
 	}
 	return &node, nil
 }
-func GetNodes(organizationID uuid.UUID) ([]*Node, error) {
+func GetNodes(organizationID uuid.UUID) ([]Node, error) {
 	db := mustConnect()
-	var nodes []*Node
+	var nodes []Node
 	err := db.Preload("Tags").Where("organization_id = ?", organizationID).Find(&nodes).Error
 	if err != nil {
 		return nil, err
