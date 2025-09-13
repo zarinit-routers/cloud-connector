@@ -10,7 +10,7 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/rubenv/sql-migrate v1.8.0
-	github.com/zarinit-routers/middleware v0.3.2
+	github.com/zarinit-routers/middleware v0.4.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.0
 )

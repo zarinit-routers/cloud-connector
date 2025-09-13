@@ -21,14 +21,8 @@ func GetClientsHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := uuid.Parse(user.OrganizationId)
-		if err != nil {
-			log.Error("Failed parse organization id", "error", err)
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
 
-		nodes, err := repository.GetNodes(organizationId)
+		nodes, err := repository.GetNodes(user.OrganizationID)
 		if err != nil {
 			log.Error("Failed get nodes from repository", "error", err)
 			c.AbortWithStatus(http.StatusInternalServerError)
@@ -58,12 +52,6 @@ func GetSingleClientHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := uuid.Parse(user.OrganizationId)
-		if err != nil {
-			log.Error("Failed parse organization id", "error", err)
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
 
 		var uri struct {
 			Id string `uri:"id" binding:"required"`
@@ -89,8 +77,8 @@ func GetSingleClientHandler() gin.HandlerFunc {
 			return
 		}
 
-		if node.OrganizationID != organizationId && !user.IsAdmin() {
-			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.OrganizationID.String(), "organizationId", organizationId.String())
+		if node.OrganizationID != user.OrganizationID && !user.IsAdmin() {
+			log.Error("Try to access to node outside of own organization", "node.OrganizationID", node.OrganizationID, "user.OrganizationID", user.OrganizationID)
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
@@ -113,12 +101,6 @@ func AddTagsHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := uuid.Parse(user.OrganizationId)
-		if err != nil {
-			log.Error("Failed parse organization id", "error", err)
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
 
 		var request struct {
 			Id   string   `uri:"id" binding:"required"`
@@ -143,8 +125,8 @@ func AddTagsHandler() gin.HandlerFunc {
 			return
 		}
 
-		if node.OrganizationID != organizationId && !user.IsAdmin() {
-			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.OrganizationID, "organizationId", organizationId)
+		if node.OrganizationID != user.OrganizationID && !user.IsAdmin() {
+			log.Error("Try to access to node outside of own organization", "node.OrganizationID", node.OrganizationID, "user.organizationID", user.OrganizationID)
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
@@ -178,12 +160,6 @@ func RemoveTagsHandler() gin.HandlerFunc {
 			user = u
 		}
 		log.Info("User", "user", user)
-		organizationId, err := uuid.Parse(user.OrganizationId)
-		if err != nil {
-			log.Error("Failed parse organization id", "error", err)
-			c.AbortWithStatus(http.StatusBadRequest)
-			return
-		}
 
 		var request struct {
 			Id   string   `uri:"id" binding:"required"`
@@ -208,8 +184,8 @@ func RemoveTagsHandler() gin.HandlerFunc {
 			return
 		}
 
-		if node.OrganizationID != organizationId && !user.IsAdmin() {
-			log.Error("Try to access to node outside of own organization", "node.OrganizationId", node.OrganizationID, "organizationId", organizationId)
+		if node.OrganizationID != user.OrganizationID && !user.IsAdmin() {
+			log.Error("Try to access to node outside of own organization", "node.OrganizationID", node.OrganizationID, "user.organizationID", user.OrganizationID)
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
