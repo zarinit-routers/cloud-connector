@@ -28,6 +28,7 @@ type Node struct {
 	Name            string     `json:"name"`
 	FirstConnection time.Time  `json:"firstConnection"`
 	LastConnection  *time.Time `json:"lastConnection"`
+	Tags            []*Tag     `gorm:"foreignKey:NodeID" json:"tags"`
 }
 
 type Tag struct {
