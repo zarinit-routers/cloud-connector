@@ -189,3 +189,8 @@ func getJwtKey() jwt.Keyfunc {
 		return []byte(key), nil
 	}
 }
+
+func IsConnected(nodeId models.UUID) bool {
+	_, ok := connections[nodeId]
+	return ok
+}

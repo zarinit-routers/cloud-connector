@@ -2,13 +2,46 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/charmbracelet/log"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/zarinit-routers/cloud-connector/connections"
 	"github.com/zarinit-routers/cloud-connector/storage/repository"
 	"github.com/zarinit-routers/middleware/auth"
 )
+
+type ResponseNode struct {
+	ID              uuid.UUID         `json:"id"`
+	Name            string            `json:"name"`
+	LastConnection  *time.Time        `json:"lastConnection"`
+	FirstConnection time.Time         `json:"firstConnection"`
+	Tags            []*repository.Tag `json:"tags"`
+	OrganizationID  uuid.UUID         `json:"organizationId"`
+	Connected       bool              `json:"connected"`
+}
+
+func toResponse(in *repository.Node) ResponseNode {
+	connected := connections.IsConnected(in.ID)
+	return ResponseNode{
+		ID:              in.ID,
+		Name:            in.Name,
+		LastConnection:  in.LastConnection,
+		FirstConnection: in.FirstConnection,
+		Tags:            in.Tags,
+		OrganizationID:  in.OrganizationID,
+		Connected:       connected,
+	}
+}
+
+func mapToResponse(in []repository.Node) []ResponseNode {
+	var out []ResponseNode
+	for _, node := range in {
+		out = append(out, toResponse(&node))
+	}
+	return out
+}
 
 func GetClientsHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -30,7 +63,7 @@ func GetClientsHandler() gin.HandlerFunc {
 		}
 		log.Info("Nodes", "nodes", nodes)
 		c.JSON(http.StatusOK, gin.H{
-			"nodes": nodes,
+			"nodes": mapToResponse(nodes),
 		})
 	}
 }
@@ -84,7 +117,7 @@ func GetSingleClientHandler() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"node": node,
+			"node": toResponse(node),
 		})
 	}
 }
