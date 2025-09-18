@@ -71,7 +71,7 @@ func NewTag(nodeId uuid.UUID, tag string) (*Tag, error) {
 
 func RemoveTag(nodeID uuid.UUID, tag string) error {
 	db := mustConnect()
-	err := db.Unscoped().Model(&Tag{}).Where("node_id = ?", nodeID).Delete("tag = ?", tag).Error
+	err := db.Unscoped().Model(&Tag{}).Where("node_id = ?", nodeID).Delete(&Tag{Tag: tag, NodeID: nodeID}).Error
 	if err != nil {
 		log.Error("failed to delete tag", "error", err.Error())
 		return fmt.Errorf("failed to create tag: %s", err)
